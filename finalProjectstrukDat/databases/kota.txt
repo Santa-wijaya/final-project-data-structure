@@ -1,0 +1,2 @@
+denpasar;0.00
+badung;8.00

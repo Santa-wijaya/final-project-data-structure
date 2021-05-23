@@ -14,7 +14,7 @@
 //int init_seat = 0;
 typedef struct node{
 	char nama[50];
-	double distance;
+	float distance;
 	struct node *next;
 	struct node *prev;
 }node;
@@ -39,7 +39,7 @@ unsigned int hash(int *num);
 void antri();
 void bus_enter();
 bool is_empty();
-void insert();
+void insert(char namae[], float dist);
 void read_file();
 void display();
 void depart();
@@ -48,9 +48,12 @@ void seat_view();
 void title();
 char* lower(char str[]);
 char* upper(char str[]);
+void write();
 
 int main(){
 	int pil,pil2;
+	char location[50];
+	float dist;
 	read_file();
 	do{
 		title();
@@ -61,8 +64,25 @@ int main(){
 			case 1:
 			{
 				display();
-				printf("\n");
-				insert();
+				printf("Masukkan data kota: \n");
+				if(is_empty() == true){
+					fflush(stdin);
+					printf("Nama Kota Awal: ");
+					scanf("%[^\n]s",&location);
+					lower(location);
+					printf("\n");
+					fflush(stdin);
+				}else{
+					fflush(stdin);
+					printf("Nama kota: ");
+					scanf("%[^\n]s",&location);
+					lower(location);
+					fflush(stdin);
+					printf("Masukkan jarak dari kota %s (dalam KM)",tail->nama);
+					scanf("%f",&dist);
+
+				}
+				insert(location,dist);
 				break;
 			}
 			case 2:
@@ -91,8 +111,8 @@ int main(){
 							seat_view();
 							break;
 						}
-						system("pause");
 					}
+					if(pil2 == 1 || pil2 == 2)system("pause");
 				}while(pil2!=3);
 			}
 			case 4:
@@ -100,8 +120,14 @@ int main(){
 				depart();
 				break;
 			}
+			case 5:
+			{
+				//write();
+				break;
+			}
 		}
-	system("pause");
+	if(pil>=1 && pil<=4 && pil2!=3)system("pause");
+	pil2 = 0;
 	}while(pil!=5);
 }
 
@@ -129,27 +155,40 @@ unsigned int hash(int *num){
 void antri(){
 	queue *baru = (queue*)malloc(sizeof(queue));
 	queue *bantu;
+	node *bantu2;
+	int found = 0;
 	fflush(stdin);
-	printf("Masukkan nama: ");
-	scanf("%[^\n]s",&baru->nama);
-	lower(baru->nama);
-	fflush(stdin);
-	printf("Masukkan destinasi: ");
-	scanf("%[^\n]s",&baru->dest);
-	lower(baru->dest);
-	fflush(stdin);
-	printf("Masukkan nomor kursi yang hendak diduduki: ");
-	scanf("%d",&baru->seat_resv);
-	strcpy(baru->from,now->nama);
-	baru->next = NULL;
-	bantu = queue_head;
-	if(queue_head == NULL){
-		queue_head = baru;
-	}else{
-		while(bantu->next!=NULL){
-			bantu = bantu->next;
+	if(is_empty() == false){
+		printf("Masukkan nama: ");
+		scanf("%[^\n]s",&baru->nama);
+		lower(baru->nama);
+		fflush(stdin);
+		while(1){
+
+			printf("Masukkan destinasi: ");
+			scanf("%[^\n]s",&baru->dest);
+			lower(baru->dest);
+			fflush(stdin);
+			while(bantu2 != NULL){
+				if(strcmp(baru->dest,bantu2->nama) == 0) found = 1;
+			}
+			if(found == 1) break;
 		}
-		bantu->next = baru;
+		printf("Masukkan nomor kursi yang hendak diduduki: ");
+		scanf("%d",&baru->seat_resv);
+		strcpy(baru->from,now->nama);
+		baru->next = NULL;
+		bantu = queue_head;
+		if(queue_head == NULL){
+			queue_head = baru;
+		}else{
+			while(bantu->next!=NULL){
+				bantu = bantu->next;
+			}
+			bantu->next = baru;
+		}
+	}else{
+		printf("Belum ada jalur bus! harap tambahkan jalur...\n");
 	}
 }
 
@@ -186,64 +225,24 @@ bool is_empty(){
 	else return false;
 }
 
-void insert(){
+void insert(char namae[], float dist){
 	char tmp[100];
 	node *baru = (node*)malloc(sizeof(node));
+	strcpy(baru->nama,namae);
 	baru->next=NULL;
 	baru->prev=NULL;
-	printf("Masukkan data kota: \n");
 	if(is_empty() == true){
-		fflush(stdin);
-		printf("Nama Kota Awal: ");
-		scanf("%[^\n]s",&baru->nama);
-		lower(baru->nama);
-		fflush(stdin);
 		baru->distance = 0;
 		head = baru;
 		tail = head;
 		now = head;
 	}else{
-		printf("Nama kota: ");
-		fflush(stdin);
-		scanf("%[^\n]s",&baru->nama);
-		lower(baru->nama);
-		fflush(stdin);
-		printf("Masukkan jarak dari kota %s (dalam KM)",tail->nama);
-		scanf("%f",&tail->distance);
+		baru->distance = dist;
 		tail->next = baru;
 		baru->prev=tail;
 		tail = baru;
 	}
-}
-
-void read_file(){
-	FILE *fp;
-	node *bantu;
-	node *baru = (node*)malloc(sizeof(node*));
-	char tmp[5];
-	fp = fopen("./databases/kota.txt","a+");
-	while(fgets(tmp,50,fp)!=NULL){
-		if(strcmp(tmp," ") != 0){
-			if(is_empty() == true){
-				sscanf(tmp,"%[^;]s;%d\n",baru->nama,baru->distance);
-				fflush(stdin);
-				baru->next=NULL;
-				baru->prev=NULL;
-				head = baru;
-				tail = head;
-				bantu = head;
-				now = head;
-			}else{
-				sscanf(tmp,"%[^;]s;%d\n",baru->nama,baru->distance);
-				fflush(stdin);
-				bantu->next=baru;
-				baru->prev=bantu;
-				bantu = baru;
-				tail = baru;
-			}
-		}
-	}
-	fclose(fp);
+	fflush(stdin);
 }
 
 void display(){
@@ -263,14 +262,35 @@ void display(){
 				printf("%s--",bantu->nama);
 				bantu = bantu->next;
 			}else if(bantu == tail){
-				printf("%.2lf km--%s",bantu->distance,bantu->nama);
+				printf("%.2f km--%s\n",bantu->distance,bantu->nama);
 				break;
 			}else{
-				printf("%.2lf km--%s--",bantu->distance,bantu->nama);
+				printf("%.2f km--%s--",bantu->distance,bantu->nama);
 				bantu = bantu->next;
 			}
 		}
 	}
+}
+
+void read_file(){
+	FILE *fp;
+	char tmp[100];
+	char location[50];
+	float dist;
+	fp = fopen("databases/kota.txt","r");
+	if(fp == NULL){
+		printf("Database \"kota.txt\" Not Found!\n");
+	}else{
+		while(fgets(tmp,100,fp)!=NULL){
+			fflush(stdin);
+			if(strcmp(" ",tmp)!=0){
+				sscanf(tmp,"%[^;];%f\n",location,&dist);
+				printf("%s %.2f\n",location,dist);
+				insert(location,dist);
+			}
+		}
+	}fflush(stdin);
+	system("pause");
 }
 
 void depart(){
@@ -288,7 +308,7 @@ void depart(){
 				title();
 				printf("Bus berangkat ");
 				for(int i=0;i<5;i++){
-					Sleep(1);
+					sleep(1);
 					printf(". ");
 				}
 				count = count - 1;
@@ -338,10 +358,11 @@ void seat_view(){
 			printf("| %2d | TERISI  |\n",i+1);
 		}
 	}
+	printf("+----+---------+\n");
 }
 
 void title(){
-	//clear();
+	clear();
 	printf("+------------------------------------------------------------+\n");
 	printf("|                 PROGRAM SIMULASI BUS KOTA                  |\n");
 	printf("+------------------------------------------------------------+\n");
@@ -363,4 +384,16 @@ char* upper(char str[]){
       }
    }
     return str;
+}
+
+void write(){
+	node *bantu;
+	FILE *fp;
+	fp = fopen("./databases/kota.txt","w");
+	bantu = head;
+	while(bantu!=NULL){
+		fprintf(fp,"%s;%.2f;\n",bantu->nama,bantu->distance);
+		bantu = bantu->next;
+	}
+	fclose(fp);
 }
