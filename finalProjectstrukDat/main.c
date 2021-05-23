@@ -3,17 +3,15 @@
 #include "string.h"
 #include "stdbool.h"
 
+#ifdef _WIN32
+#include <Windows.h>
+#else
+#include <unistd.h>
+#endif
+
 #define MAX 40
 
-int init_seat = 0;
-
-void clear(){
-	#ifdef _WIN32
-		std: system("cls");
-	#else
-		std: system("clear");
-	#endif
-}
+//int init_seat = 0;
 typedef struct node{
 	char nama[50];
 	double distance;
@@ -29,6 +27,92 @@ typedef struct queue{
 	struct queue *next;
 }queue;
 
+queue *seat[MAX];
+queue *queue_head = NULL;
+node *head = NULL;
+node *tail = NULL;
+node *now = NULL;
+
+void clear();
+bool is_full();
+unsigned int hash(int *num);
+void antri();
+void bus_enter();
+bool is_empty();
+void insert();
+void read_file();
+void display();
+void depart();
+void reverse();
+void seat_view();
+void title();
+char* lower(char str[]);
+char* upper(char str[]);
+
+int main(){
+	int pil,pil2;
+	read_file();
+	do{
+		title();
+		printf("Menu:\n");
+		printf("\t1. Tambah Jalur Bus\n\t2. Lihat Jalur Bus\n\t3. Menu Penumpang\n\t4. Berangkat\n\t5. Selesai\nPilihan: ");
+		scanf("%d",&pil);
+		switch(pil){
+			case 1:
+			{
+				display();
+				printf("\n");
+				insert();
+				break;
+			}
+			case 2:
+			{
+				display();
+				break;
+			}
+			case 3:
+			{
+				do{
+					title();
+					printf("Menu Penumpang: \n");
+					printf("\t\t1. Antri\n");
+					printf("\t\t2. Lihat isi bus\n");
+					printf("\t\t3. Keluar\n");
+					printf("Pilihan: ");
+					scanf("%d",&pil2);
+					switch(pil2){
+						case 1:
+						{
+							antri();
+							break;
+						}
+						case 2:
+						{
+							seat_view();
+							break;
+						}
+						system("pause");
+					}
+				}while(pil2!=3);
+			}
+			case 4:
+			{
+				depart();
+				break;
+			}
+		}
+	system("pause");
+	}while(pil!=5);
+}
+
+void clear(){
+	#ifdef _WIN32
+		std: system("cls");
+	#else
+		std: system("clear");
+	#endif
+}
+
 bool is_full(){
 	for(int i = 0; i<MAX;i++){
 		if(seat[i] == NULL) return false;
@@ -36,21 +120,24 @@ bool is_full(){
 	return true;
 }
 
-queue *seat[MAX];
 
 unsigned int hash(int *num){
 	int hash_value = (*num)%MAX;
 	return hash_value;
 }
 
-queue *queue_head = NULL;
 void antri(){
 	queue *baru = (queue*)malloc(sizeof(queue));
 	queue *bantu;
+	fflush(stdin);
 	printf("Masukkan nama: ");
 	scanf("%[^\n]s",&baru->nama);
+	lower(baru->nama);
+	fflush(stdin);
 	printf("Masukkan destinasi: ");
 	scanf("%[^\n]s",&baru->dest);
+	lower(baru->dest);
+	fflush(stdin);
 	printf("Masukkan nomor kursi yang hendak diduduki: ");
 	scanf("%d",&baru->seat_resv);
 	strcpy(baru->from,now->nama);
@@ -93,9 +180,6 @@ void bus_enter(){
 	}
 }
 
-node *head = NULL;
-node *tail = NULL;
-node *now = NULL;
 
 bool is_empty(){
 	if(head == NULL) return true;
@@ -109,15 +193,21 @@ void insert(){
 	baru->prev=NULL;
 	printf("Masukkan data kota: \n");
 	if(is_empty() == true){
+		fflush(stdin);
 		printf("Nama Kota Awal: ");
 		scanf("%[^\n]s",&baru->nama);
+		lower(baru->nama);
+		fflush(stdin);
 		baru->distance = 0;
 		head = baru;
 		tail = head;
 		now = head;
 	}else{
 		printf("Nama kota: ");
+		fflush(stdin);
 		scanf("%[^\n]s",&baru->nama);
+		lower(baru->nama);
+		fflush(stdin);
 		printf("Masukkan jarak dari kota %s (dalam KM)",tail->nama);
 		scanf("%f",&tail->distance);
 		tail->next = baru;
@@ -136,6 +226,7 @@ void read_file(){
 		if(strcmp(tmp," ") != 0){
 			if(is_empty() == true){
 				sscanf(tmp,"%[^;]s;%d\n",baru->nama,baru->distance);
+				fflush(stdin);
 				baru->next=NULL;
 				baru->prev=NULL;
 				head = baru;
@@ -144,6 +235,7 @@ void read_file(){
 				now = head;
 			}else{
 				sscanf(tmp,"%[^;]s;%d\n",baru->nama,baru->distance);
+				fflush(stdin);
 				bantu->next=baru;
 				baru->prev=bantu;
 				bantu = baru;
@@ -165,14 +257,16 @@ void display(){
 		while(bantu!=NULL){
 			if(head == tail && bantu == tail){
 				printf("%s",bantu->nama);
-				printf("Masukkan minimal 2 kota!\n");
+				printf("\nMasukkan minimal 2 kota!\n");
+				break;
 			}else if(bantu == head){
 				printf("%s--",bantu->nama);
 				bantu = bantu->next;
 			}else if(bantu == tail){
-				printf("%f km--%s",bantu->distance,bantu->nama);
+				printf("%.2lf km--%s",bantu->distance,bantu->nama);
+				break;
 			}else{
-				printf("%f km--%s--",bantu->distance,bantu->nama);
+				printf("%.2lf km--%s--",bantu->distance,bantu->nama);
 				bantu = bantu->next;
 			}
 		}
@@ -182,20 +276,19 @@ void display(){
 void depart(){
 	int arrived = 0;
 	node *bantu;
-	queue *del;
 	if(is_empty() == false){
 		if(head == tail){
 			printf("Bus telah berada di rute terakhir!\n");
 		}else if(bantu == tail){
-			printf("Bus telah berada di rute terakhir!\n");
-			printf("Tolong balikkan rute bus jika berminat!\n");
+			printf("Bus telah berada di rute terakhir!(Otomatis membalikkan rute...)\n");
+			reverse();
 		}else{
 			int count = 3;
 			while(count!=0){
 				title();
 				printf("Bus berangkat ");
 				for(int i=0;i<5;i++){
-					sleep(1);
+					Sleep(1);
 					printf(". ");
 				}
 				count = count - 1;
@@ -209,9 +302,9 @@ void depart(){
 			printf("Penumpang yang turun: \n");
 			for(int i = 0;i<MAX;i++){
 				if(strcmp(seat[i]->dest,now->nama) == 0){
-					printf("Nama: %s\n",seat[i]->nama);
-					printf("Kota keberangkatan: %s\n",seat[i]->from);
-					printf("Kota tujuan: %s\n",seat[i]->dest);
+					printf("Nama: %s\n",upper(seat[i]->nama));
+					printf("Kota keberangkatan: %s\n",upper(seat[i]->from));
+					printf("Kota tujuan: %s\n",upper(seat[i]->dest));
 					printf("----------------------------------------------\n");
 					seat[i] = NULL;
 				}
@@ -234,66 +327,40 @@ void reverse(){
 	fclose(fp);
 	read_file();
 }
+void seat_view(){
+	printf("+----+---------+\n");
+	printf("| NO | KONDISI |\n");
+	printf("+----+---------+\n");
+	for(int i=0;i<MAX;i++){
+		if(seat[i] == NULL){
+			printf("| %2d | KOSONG  |\n",i+1);
+		}else{
+			printf("| %2d | TERISI  |\n",i+1);
+		}
+	}
+}
 
 void title(){
+	//clear();
 	printf("+------------------------------------------------------------+\n");
 	printf("|                 PROGRAM SIMULASI BUS KOTA                  |\n");
 	printf("+------------------------------------------------------------+\n");
 }
 
-int main(){
-	int pil,pil2;
-	read_file();
-	title();
-	printf("Menu:\n");
-	printf("\t1. Tambah Jalur Bus\n\t2. Lihat Jalur Bus\n\t3. Menu Penumpang\n\t4. Berangkat\n\t5. Selesai\nPilihan: ");
-	scanf("%d",&pil);
-	switch(pil){
-		case 1:
-		{
-			display();
-			insert();
-			break;
-		}
-		case 2:
-		{
-			display();
-			break;
-		}
-		case 3:
-		{
-			printf("Menu Penumpang: \n");
-			printf("\t\t1. Antri\n");
-			printf("\t\t2. Lihat isi bus\n");
-			printf("\t\t3. Keluar\n");
-			printf("Pilihan: ");
-			scanf("%d",&pil2);
-			switch(pil2){
-				case 1:
-				{
-					break;
-				}
-				case 2:
-				{
-					break;
-				}
-				case 3:
-				{
-					break;
-				}
-				default:{
-					break;
-				}
-			}
-		}
-		case 4:
-		{
-			break;
-		}
-		default:
-		{
-			break;
-		}
-	}
+char* lower(char str[]){
+   int i;
+   for(i=0;i<=strlen(str);i++){
+      if(str[i]>=65&&str[i]<=90)
+         str[i]=str[i]+32;
+   }
+    return str;
 }
-
+char* upper(char str[]){
+    int i;
+    for (i = 0; str[i]!='\0'; i++) {
+      if(str[i] >= 'a' && str[i] <= 'z') {
+         str[i] = str[i] - 32;
+      }
+   }
+    return str;
+}
