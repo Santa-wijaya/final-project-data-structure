@@ -5,6 +5,8 @@
 
 #define MAX 40
 
+int init_seat = 0;
+
 void clear(){
 	#ifdef _WIN32
 		std: system("cls");
@@ -23,6 +25,7 @@ typedef struct queue{
 	char nama[150];
 	char from[50];
 	char dest[50];
+	int seat_resv;
 	struct queue *next;
 }queue;
 
@@ -40,12 +43,53 @@ unsigned int hash(int *num){
 	return hash_value;
 }
 
+queue *queue_head = NULL;
+void antri(){
+	queue *baru = (queue*)malloc(sizeof(queue));
+	queue *bantu;
+	printf("Masukkan nama: ");
+	scanf("%[^\n]s",&baru->nama);
+	printf("Masukkan destinasi: ");
+	scanf("%[^\n]s",&baru->dest);
+	printf("Masukkan nomor kursi yang hendak diduduki: ");
+	scanf("%d",&baru->seat_resv);
+	strcpy(baru->from,now->nama);
+	baru->next = NULL;
+	bantu = queue_head;
+	if(queue_head == NULL){
+		queue_head = baru;
+	}else{
+		while(bantu->next!=NULL){
+			bantu = bantu->next;
+		}
+		bantu->next = baru;
+	}
+}
 
 void bus_enter(){
+	queue *bantu;
+	int index;
 	if(is_full() == true){
 		printf("Bus sudah penuh! harap gunakan bus lain!\n");
 	}else{
-
+		bantu = queue_head;
+		while(bantu != NULL){
+			if(is_full() == true){
+				printf("Bus sudah penuh! harap gunakan bus lain!\n");
+			}
+			if(strcmp(bantu->from,now->nama) == 0){
+				index = hash(&bantu->seat_resv);
+				if(bantu->seat_resv>MAX){
+					printf("Karena kursi %d tidak ada, maka akan dialihkan ke kursi lain jika tersedia!\n",bantu->seat_resv);
+				}else{
+					printf("Apabila kursi %d sudah terisi, akan otomatis dialihkan ke kursi lain!\n",bantu->seat_resv);
+				}
+				while(seat[index] != NULL){
+					index = index+1;
+				}
+				seat[index] = bantu;
+			}
+		}
 	}
 }
 
@@ -136,10 +180,15 @@ void display(){
 }
 
 void depart(){
+	int arrived = 0;
 	node *bantu;
+	queue *del;
 	if(is_empty() == false){
-		if(bantu == tail){
+		if(head == tail){
 			printf("Bus telah berada di rute terakhir!\n");
+		}else if(bantu == tail){
+			printf("Bus telah berada di rute terakhir!\n");
+			printf("Tolong balikkan rute bus jika berminat!\n");
 		}else{
 			int count = 3;
 			while(count!=0){
@@ -154,6 +203,19 @@ void depart(){
 			bantu = bantu->next;
 			now = bantu;
 			printf("Bus telah sampai pada kota %s!",bantu->nama);
+			arrived = 1;
+		}
+		if(arrived == 1){
+			printf("Penumpang yang turun: \n");
+			for(int i = 0;i<MAX;i++){
+				if(strcmp(seat[i]->dest,now->nama) == 0){
+					printf("Nama: %s\n",seat[i]->nama);
+					printf("Kota keberangkatan: %s\n",seat[i]->from);
+					printf("Kota tujuan: %s\n",seat[i]->dest);
+					printf("----------------------------------------------\n");
+					seat[i] = NULL;
+				}
+			}
 		}
 	}
 }
