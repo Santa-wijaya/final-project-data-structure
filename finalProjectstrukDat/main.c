@@ -144,6 +144,7 @@ int main(){
 								printf("Kursi yang hendak dipesan: ");
 								scanf("%d",&seat);
 							}while(seat>=999);
+							seat = seat - 1;
 							printf("PERHATIAN!\nKURSI YANG DIPESAN DAPAT SECARA OTOMATIS DI RELOKASI KE KURSI YANG TERSEDIA\nAPABILA KURSI YANG DIPESAN TELAH TERISI!\n");
 							insert_antrian(nama,dest,from,seat);
 							break;
